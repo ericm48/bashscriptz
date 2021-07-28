@@ -1,0 +1,90 @@
+#!/bin/bash
+#
+#  Pull down certs for mvn from various Artifactories
+#
+
+#set -x
+
+usage(){
+   			echo " "
+   			echo " "
+   			echo " "
+   			echo "Usage:   $0"
+   			echo " "
+   			echo " "
+   			echo " "
+	exit 1
+}
+
+	# First make sure JAVA_HOME is set...
+	if [ -z "$JAVA_HOME" ]
+
+	then
+	      echo "\$JAVA_HOME is empty!!!"
+	      export JAVA_HOME="/Library/Java/JavaVirtualMachines/jdk1.8.0_221.jdk/Contents/Home"
+	      echo " "
+	      echo "Setting JAVA_HOME=$JAVA_HOME"
+	      echo " "
+	else
+	      echo "\$JAVA_HOME is NOT empty"
+	fi
+
+  cd ${JAVA_HOME}/jre/lib/security
+
+	# MC Artifactory
+	targetEndpoint='artifacts.mastercard.int:443'
+
+	echo ""
+	echo "Processing: $targetEndpoint"
+
+	echo "" | openssl s_client -connect $targetEndpoint > artifactorycerts
+
+	keytool -delete -storepass changeit -alias artifactory -keystore cacerts
+
+	keytool -importcert -storepass changeit -noprompt -trustcacerts -file artifactorycerts -keystore cacerts -alias artifactory
+
+  # MVN Central
+	targetEndpoint='repo.maven.apache.org:443'
+
+	echo ""
+	echo "Processing: $targetEndpoint"
+
+	echo "" | openssl s_client -connect $targetEndpoint > centralcerts
+	keytool -delete -storepass changeit -alias central -keystore cacerts
+	keytool -importcert -storepass changeit -noprompt -trustcacerts -file centralcerts -keystore cacerts -alias central
+
+	# SonaType
+	targetEndpoint='oss.sonatype.org:443'
+
+	echo ""
+	echo "Processing: $targetEndpoint"
+
+	echo "" | openssl s_client -connect $targetEndpoint > sonatypecerts
+	keytool -delete -storepass changeit -alias sonatype-nexus-snapshots -keystore cacerts
+	keytool -delete -storepass changeit -alias sonatype-nexus-releases -keystore cacerts
+	keytool -importcert -storepass changeit -noprompt -trustcacerts -file sonatypecerts -keystore cacerts -alias sonatype-nexus-snapshots
+	keytool -importcert -storepass changeit -noprompt -trustcacerts -file sonatypecerts -keystore cacerts -alias sonatype-nexus-releases
+
+	# RubyGems.org
+	targetEndpoint='rubygems.org:443'
+
+	echo ""
+	echo "Processing: $targetEndpoint"
+
+	echo "" | openssl s_client -connect $targetEndpoint > rubygemscerts
+	keytool -delete -storepass changeit -alias rubygems -keystore cacerts
+	keytool -importcert -storepass changeit -noprompt -trustcacerts -file rubygemscerts -keystore cacerts -alias rubygems
+
+
+	# API.RubyGems.org
+	targetEndpoint='api.rubygems.org:443'
+
+	echo ""
+	echo "Processing: $targetEndpoint"
+
+	echo "" | openssl s_client -connect $targetEndpoint > apirubygemscerts
+	keytool -delete -storepass changeit -alias apirubygems -keystore cacerts
+	keytool -importcert -storepass changeit -noprompt -trustcacerts -file apirubygemscerts -keystore cacerts -alias apirubygems
+
+
+
